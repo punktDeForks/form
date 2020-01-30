@@ -12,6 +12,7 @@ namespace Neos\Form\Finishers;
  */
 
 use Neos\Flow\I18n\Service;
+use Neos\Flow\Log\Utility\LogEnvironment;
 use Neos\Flow\ResourceManagement\PersistentResource;
 use Neos\FluidAdaptor\View\StandaloneView;
 use Neos\Form\Core\Model\AbstractFinisher;
@@ -19,6 +20,7 @@ use Neos\Form\Exception\FinisherException;
 use Neos\SwiftMailer\Message as SwiftMailerMessage;
 use Neos\Utility\ObjectAccess;
 use Neos\Flow\Annotations as Flow;
+use Psr\Log\LoggerInterface;
 
 /**
  * This finisher sends an email to one or more recipients
@@ -62,6 +64,12 @@ class EmailFinisher extends AbstractFinisher
     protected $i18nService;
 
     /**
+     * @var LoggerInterface
+     * @Flow\Inject
+     */
+    protected $logger;
+
+    /**
      * @var array
      */
     protected $defaultOptions = array(
@@ -75,10 +83,10 @@ class EmailFinisher extends AbstractFinisher
 
     /**
      * Executes this finisher
-     * @see AbstractFinisher::execute()
-     *
      * @return void
      * @throws FinisherException
+     * @see AbstractFinisher::execute()
+     *
      */
     protected function executeInternal()
     {
@@ -102,6 +110,21 @@ class EmailFinisher extends AbstractFinisher
         $blindCarbonCopyAddress = $this->parseOption('blindCarbonCopyAddress');
         $format = $this->parseOption('format');
         $testMode = $this->parseOption('testMode');
+
+        $debugData = [
+            'subject' => $this->parseOption('subject'),
+            'recipientAddress' => $this->parseOption('recipientAddress'),
+            'recipientName' => $this->parseOption('recipientName'),
+            'senderAddress' => $this->parseOption('senderAddress'),
+            'senderName' => $this->parseOption('senderName'),
+            'replyToAddress' => $this->parseOption('replyToAddress'),
+            'carbonCopyAddress' => $this->parseOption('carbonCopyAddress'),
+            'blindCarbonCopyAddress' => $this->parseOption('blindCarbonCopyAddress'),
+            'format' => $this->parseOption('format'),
+            'testMode' => $this->parseOption('testMode'),
+        ];
+
+        $this->logger->info('Sending Mail with Data', array_merge(LogEnvironment::fromMethodName(__METHOD__), $debugData));
 
         if ($subject === null) {
             throw new FinisherException('The option "subject" must be set for the EmailFinisher.', 1327060320);
